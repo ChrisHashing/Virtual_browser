@@ -1,0 +1,120 @@
+.defaultContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9f9f9;
+  padding: 24px;
+}
+
+.welcomeContainer {
+  max-width: 600px;
+  text-align: center;
+}
+
+.welcomeTitle {
+  font-size: 28px;
+  color: #4285f4;
+  margin-bottom: 16px;
+}
+
+.welcomeText {
+  font-size: 16px;
+  color: #5f6368;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.searchContainer {
+  display: flex;
+  margin-bottom: 40px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 16px;
+  border: none;
+  outline: none;
+}
+
+.searchButton {
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  padding: 0 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.searchButton:hover {
+  background-color: #3367d6;
+}
+
+.quickLinksContainer {
+  width: 100%;
+}
+
+.quickLinksTitle {
+  font-size: 18px;
+  color: #5f6368;
+  margin-bottom: 16px;
+}
+
+.quickLinks {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.quickLink {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: #5f6368;
+  padding: 16px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  width: 100px;
+}
+
+.quickLink:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.quickLinkIcon {
+  font-size: 24px;
+  margin-bottom: 8px;
+  color: #4285f4;
+}
+
+.quickLinkTitle {
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  .welcomeTitle {
+    font-size: 24px;
+  }
+  
+  .welcomeText {
+    font-size: 14px;
+  }
+  
+  .quickLinks {
+    gap: 12px;
+  }
+  
+  .quickLink {
+    width: 80px;
+    padding: 12px;
+  }
+}

@@ -1,0 +1,35 @@
+.navigationControls {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.navButton {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.navButton:hover:not(.disabled) {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.navButton.disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .navButton {
+    padding: 6px;
+    font-size: 14px;
+  }
+}

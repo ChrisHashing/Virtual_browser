@@ -1,0 +1,41 @@
+.browserContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.mainContent {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.contentArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.navigationBar {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  height: 40px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Adjust content area when sidebar is open */
+.sidebarOpen .contentArea {
+  margin-left: 250px;
+  transition: margin-left 0.3s ease;
+}
+
+@media (max-width: 600px) {
+  .sidebarOpen .contentArea {
+    margin-left: 200px;
+  }
+}

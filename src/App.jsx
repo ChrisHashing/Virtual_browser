@@ -14,11 +14,24 @@ function App() {
   const forwardButtonRef = useRef(null);
   const reloadButtonRef = useRef(null);
 
-  // Initialize app
+  // Initialize app - only runs once
   useEffect(() => {
-    // Only create a tab if there are none
+    // Create initial tab only if we don't have any
     if (tabs.length === 0) {
-      createNewTab();
+      const newTabId = `tab-${tabCounter}`;
+      const newTab = {
+        id: newTabId,
+        title: 'New Tab',
+        url: '',
+        history: [],
+        currentIndex: -1,
+        hasSearched: false,
+        isFirstTab: true
+      };
+      
+      setTabs([newTab]);
+      setActiveTabId(newTabId);
+      setTabCounter(prevCounter => prevCounter + 1);
     }
     
     // Apply saved theme preference on page load
@@ -30,7 +43,7 @@ function App() {
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       document.documentElement.setAttribute('data-theme', systemPrefersDark ? 'dark' : 'light');
     }
-  }, [tabs.length]);
+  }, []); // Empty dependency array ensures this only runs once
 
   // Update navigation buttons when active tab changes
   useEffect(() => {
@@ -41,7 +54,6 @@ function App() {
 
   const createNewTab = () => {
     const newTabId = `tab-${tabCounter}`;
-    const isFirstTab = tabCounter === 0;
     
     const newTab = {
       id: newTabId,
@@ -50,7 +62,7 @@ function App() {
       history: [],
       currentIndex: -1,
       hasSearched: false,
-      isFirstTab
+      isFirstTab: false // Only the initial tab should be first tab
     };
     
     setTabs(prevTabs => [...prevTabs, newTab]);
@@ -60,9 +72,29 @@ function App() {
 
   const closeTab = (tabId) => {
     setTabs(prevTabs => {
-      // Don't close if it's the last tab
+      // If this is the last tab, don't close it - create a new empty tab instead
       if (prevTabs.length <= 1) {
-        return prevTabs;
+        // We'll create a new tab after this function completes
+        setTimeout(() => {
+          // Create a new tab with a clean state
+          const newTabId = `tab-${tabCounter}`;
+          const newTab = {
+            id: newTabId,
+            title: 'New Tab',
+            url: '',
+            history: [],
+            currentIndex: -1,
+            hasSearched: false,
+            isFirstTab: false
+          };
+          
+          setTabs([newTab]);
+          setActiveTabId(newTabId);
+          setTabCounter(prevCounter => prevCounter + 1);
+        }, 0);
+        
+        // Return an empty array - this will be replaced by the new tab
+        return [];
       }
       
       const updatedTabs = prevTabs.filter(tab => tab.id !== tabId);

@@ -1,0 +1,72 @@
+import React, { useEffect, useRef, useState } from 'react';
+import DefaultContent from './DefaultContent';
+import FirstTabContent from './FirstTabContent';
+import LoadingContent from './LoadingContent';
+
+const TabContent = ({ tab, isActive, onFeaturedItemClick }) => {
+  const iframeRef = useRef(null);
+  const [showDefaultContent, setShowDefaultContent] = useState(true);
+  const [showLoading, setShowLoading] = useState(false);
+  const [showIframe, setShowIframe] = useState(false);
+
+  useEffect(() => {
+    // Handle iframe visibility based on tab state
+    if (tab.hasSearched && tab.history.length > 0) {
+      setShowDefaultContent(false);
+      
+      if (isActive) {
+        setShowLoading(true);
+        setShowIframe(false);
+      }
+    }
+  }, [tab.hasSearched, tab.history.length, isActive]);
+
+  useEffect(() => {
+    // Update iframe src when tab history changes
+    if (iframeRef.current && tab.history.length > 0 && tab.currentIndex >= 0) {
+      iframeRef.current.src = tab.history[tab.currentIndex];
+    }
+  }, [tab.history, tab.currentIndex]);
+
+  const handleIframeLoad = () => {
+    setShowLoading(false);
+    setShowIframe(true);
+    
+    // Try to update tab title from iframe content
+    try {
+      const title = iframeRef.current.contentDocument.title;
+      if (title) {
+        // This would need to be handled by lifting state up
+        console.log('Iframe title:', title);
+      }
+    } catch (e) {
+      console.log('Cannot access iframe content:', e);
+    }
+  };
+
+  return (
+    <div className={`tab-content ${isActive ? 'active' : ''}`} data-tab-id={tab.id}>
+      {showDefaultContent && (
+        tab.isFirstTab ? (
+          <FirstTabContent tabId={tab.id} />
+        ) : (
+          <DefaultContent tabId={tab.id} onFeaturedItemClick={onFeaturedItemClick} />
+        )
+      )}
+      
+      {showLoading && (
+        <LoadingContent tabId={tab.id} />
+      )}
+      
+      <iframe 
+        ref={iframeRef}
+        title={tab.title}
+        style={{ display: showIframe ? 'block' : 'none' }}
+        onLoad={handleIframeLoad}
+        onError={handleIframeLoad} // Handle errors the same way
+      />
+    </div>
+  );
+};
+
+export default TabContent;

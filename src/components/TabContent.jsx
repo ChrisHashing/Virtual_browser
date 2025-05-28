@@ -9,24 +9,50 @@ const TabContent = ({ tab, isActive, onFeaturedItemClick }) => {
   const [showLoading, setShowLoading] = useState(false);
   const [showIframe, setShowIframe] = useState(false);
 
+  // Reset states when tab changes
   useEffect(() => {
-    // Handle iframe visibility based on tab state
     if (tab.hasSearched && tab.history.length > 0) {
       setShowDefaultContent(false);
-      
-      if (isActive) {
-        setShowLoading(true);
-        setShowIframe(false);
+      setShowLoading(true);
+      setShowIframe(false);
+    } else {
+      setShowDefaultContent(true);
+      setShowLoading(false);
+      setShowIframe(false);
+    }
+  }, [tab.id, tab.hasSearched, tab.history.length]);
+
+  // Handle iframe src updates
+  useEffect(() => {
+    if (iframeRef.current && tab.history.length > 0 && tab.currentIndex >= 0) {
+      // Only update src if it's different to avoid unnecessary reloads
+      const newSrc = tab.history[tab.currentIndex];
+      if (iframeRef.current.src !== newSrc) {
+        iframeRef.current.src = newSrc;
+        
+        // Show loading state when changing URL
+        if (isActive) {
+          setShowLoading(true);
+          setShowIframe(false);
+        }
       }
     }
-  }, [tab.hasSearched, tab.history.length, isActive]);
+  }, [tab.history, tab.currentIndex, isActive]);
 
+  // Handle visibility based on active state
   useEffect(() => {
-    // Update iframe src when tab history changes
-    if (iframeRef.current && tab.history.length > 0 && tab.currentIndex >= 0) {
-      iframeRef.current.src = tab.history[tab.currentIndex];
+    // No need to change anything if we're showing default content
+    if (showDefaultContent) return;
+    
+    // If tab becomes active and we have history, ensure iframe is visible
+    if (isActive && tab.history.length > 0 && tab.currentIndex >= 0) {
+      // If iframe is already loaded, show it immediately
+      if (iframeRef.current && iframeRef.current.complete) {
+        setShowLoading(false);
+        setShowIframe(true);
+      }
     }
-  }, [tab.history, tab.currentIndex]);
+  }, [isActive, showDefaultContent, tab.history.length, tab.currentIndex]);
 
   const handleIframeLoad = () => {
     setShowLoading(false);

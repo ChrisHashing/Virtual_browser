@@ -14,9 +14,12 @@ function App() {
   const forwardButtonRef = useRef(null);
   const reloadButtonRef = useRef(null);
 
-  // Initialize with first tab
+  // Initialize app
   useEffect(() => {
-    createNewTab();
+    // Only create a tab if there are none
+    if (tabs.length === 0) {
+      createNewTab();
+    }
     
     // Apply saved theme preference on page load
     const storedTheme = localStorage.getItem('preferredTheme');
@@ -27,7 +30,7 @@ function App() {
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       document.documentElement.setAttribute('data-theme', systemPrefersDark ? 'dark' : 'light');
     }
-  }, []);
+  }, [tabs.length]);
 
   // Update navigation buttons when active tab changes
   useEffect(() => {
@@ -57,16 +60,21 @@ function App() {
 
   const closeTab = (tabId) => {
     setTabs(prevTabs => {
+      // Don't close if it's the last tab
+      if (prevTabs.length <= 1) {
+        return prevTabs;
+      }
+      
       const updatedTabs = prevTabs.filter(tab => tab.id !== tabId);
       
       // If we're closing the active tab, set a new active tab
       if (activeTabId === tabId) {
-        if (updatedTabs.length > 0) {
-          setActiveTabId(updatedTabs[updatedTabs.length - 1].id);
-        } else {
-          // If no tabs remain, create a new one
-          setTimeout(createNewTab, 0);
-        }
+        // Find the index of the tab being closed
+        const closedTabIndex = prevTabs.findIndex(tab => tab.id === tabId);
+        
+        // Prefer to activate the tab to the left, unless it's the first tab
+        const newActiveIndex = closedTabIndex === 0 ? 0 : closedTabIndex - 1;
+        setActiveTabId(updatedTabs[newActiveIndex].id);
       }
       
       return updatedTabs;

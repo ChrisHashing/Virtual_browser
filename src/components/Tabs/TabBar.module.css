@@ -1,0 +1,46 @@
+.tabBar {
+  display: flex;
+  align-items: center;
+  background-color: #f1f3f5;
+  padding: 0.5rem 0.5rem 0;
+  border-bottom: 1px solid #dee2e6;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.tabBar::-webkit-scrollbar {
+  height: 5px;
+}
+
+.tabBar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tabBar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.tabsContainer {
+  display: flex;
+  flex: 1;
+}
+
+.newTabButton {
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-left: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.newTabButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #343a40;
+}

@@ -1,6 +1,56 @@
-# Getting Started with Create React App
+# Virtual Browser
+
+A React-based virtual browser application with a modern UI and component-based architecture.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+
+## Project Structure
+
+The project is organized into the following component folders:
+
+- **Header**: Contains the main header component for the application
+- **Navigation**: Contains components for navigation controls and address bar
+- **Sidebar**: Contains the sidebar component for bookmarks and settings
+- **Tabs**: Contains components for tab management
+- **Content**: Contains components for displaying browser content
+- **UI**: Contains reusable UI components like buttons and modals
+
+## Features
+
+- Tab management (create, close, switch tabs)
+- Navigation controls (back, forward, refresh, home)
+- Address bar for URL input
+- Content display area
+- Sidebar for bookmarks and settings
+- Responsive design
+
+## Technologies Used
+
+- React.js
+- CSS Modules for component styling
+- React Icons for UI icons
+- UUID for generating unique IDs
+
+## Component Architecture
+
+- **App.jsx**: Main application component that manages state and renders child components
+- **Header**: Application header with logo and main controls
+- **Navigation**: 
+  - NavigationControls: Back, forward, refresh, and home buttons
+  - AddressBar: URL input and navigation
+- **Tabs**:
+  - TabBar: Container for tabs and new tab button
+  - Tab: Individual tab component
+- **Content**:
+  - BrowserContent: Displays web content for a URL
+  - DefaultContent: Displays default content for new tabs
+- **UI**:
+  - Button: Reusable button component
+  - Modal: Reusable modal component
+
+## Styling
+
+Each component has its own CSS Module file (*.module.css) for scoped styling.
 
 ## Available Scripts
 

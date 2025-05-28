@@ -1,37 +1,36 @@
-import { useState, useEffect, useRef } from 'react';
-import Tab from './components/Tab';
-import TabContent from './components/TabContent';
+import React, { useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import styles from './App.module.css';
+
+// Component imports
+import Header from './components/Header/Header';
+import Sidebar from './components/Sidebar/Sidebar';
+import TabBar from './components/Tabs/TabBar';
+import NavigationControls from './components/Navigation/NavigationControls';
+import AddressBar from './components/Navigation/AddressBar';
+import BrowserContent from './components/Content/BrowserContent';
 
 function App() {
-  const GATEWAY_BASE = 'http://localhost:3000';
+  // State
   const [tabs, setTabs] = useState([]);
   const [activeTabId, setActiveTabId] = useState(null);
-  const [tabCounter, setTabCounter] = useState(0);
-  const [inputValue, setInputValue] = useState('');
-  
-  // Refs for navigation buttons
-  const backButtonRef = useRef(null);
-  const forwardButtonRef = useRef(null);
-  const reloadButtonRef = useRef(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize app - only runs once
+  // Initialize with a default tab
   useEffect(() => {
-    // Create initial tab only if we don't have any
     if (tabs.length === 0) {
-      const newTabId = `tab-${tabCounter}`;
       const newTab = {
-        id: newTabId,
+        id: uuidv4(),
         title: 'New Tab',
         url: '',
+        favicon: null,
         history: [],
-        currentIndex: -1,
-        hasSearched: false,
-        isFirstTab: true
+        currentHistoryIndex: -1
       };
       
       setTabs([newTab]);
-      setActiveTabId(newTabId);
-      setTabCounter(prevCounter => prevCounter + 1);
+      setActiveTabId(newTab.id);
     }
     
     // Apply saved theme preference on page load
@@ -43,205 +42,178 @@ function App() {
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       document.documentElement.setAttribute('data-theme', systemPrefersDark ? 'dark' : 'light');
     }
-  }, []); // Empty dependency array ensures this only runs once
+  }, []);
 
-  // Update navigation buttons when active tab changes
-  useEffect(() => {
-    if (activeTabId !== null) {
-      updateButtons();
-    }
-  }, [activeTabId, tabs]);
-
-  const createNewTab = () => {
-    const newTabId = `tab-${tabCounter}`;
-    
+  // Tab management functions
+  const handleAddTab = () => {
     const newTab = {
-      id: newTabId,
+      id: uuidv4(),
       title: 'New Tab',
       url: '',
+      favicon: null,
       history: [],
-      currentIndex: -1,
-      hasSearched: false,
-      isFirstTab: false // Only the initial tab should be first tab
+      currentHistoryIndex: -1
     };
     
-    setTabs(prevTabs => [...prevTabs, newTab]);
-    setActiveTabId(newTabId);
-    setTabCounter(prevCounter => prevCounter + 1);
+    setTabs([...tabs, newTab]);
+    setActiveTabId(newTab.id);
   };
 
-  const closeTab = (tabId) => {
-    setTabs(prevTabs => {
-      // If this is the last tab, don't close it - create a new empty tab instead
-      if (prevTabs.length <= 1) {
-        // We'll create a new tab after this function completes
-        setTimeout(() => {
-          // Create a new tab with a clean state
-          const newTabId = `tab-${tabCounter}`;
-          const newTab = {
-            id: newTabId,
-            title: 'New Tab',
-            url: '',
-            history: [],
-            currentIndex: -1,
-            hasSearched: false,
-            isFirstTab: false
-          };
-          
-          setTabs([newTab]);
-          setActiveTabId(newTabId);
-          setTabCounter(prevCounter => prevCounter + 1);
-        }, 0);
-        
-        // Return an empty array - this will be replaced by the new tab
-        return [];
-      }
+  const handleCloseTab = (tabId) => {
+    // Don't close if it's the last tab
+    if (tabs.length <= 1) {
+      const newTab = {
+        id: uuidv4(),
+        title: 'New Tab',
+        url: '',
+        favicon: null,
+        history: [],
+        currentHistoryIndex: -1
+      };
       
-      const updatedTabs = prevTabs.filter(tab => tab.id !== tabId);
-      
-      // If we're closing the active tab, set a new active tab
-      if (activeTabId === tabId) {
-        // Find the index of the tab being closed
-        const closedTabIndex = prevTabs.findIndex(tab => tab.id === tabId);
-        
-        // Prefer to activate the tab to the left, unless it's the first tab
-        const newActiveIndex = closedTabIndex === 0 ? 0 : closedTabIndex - 1;
-        setActiveTabId(updatedTabs[newActiveIndex].id);
-      }
-      
-      return updatedTabs;
-    });
-  };
-
-  const setActiveTab = (tabId) => {
-    setActiveTabId(tabId);
+      setTabs([newTab]);
+      setActiveTabId(newTab.id);
+      return;
+    }
     
-    // Update URL input to show current tab's URL
-    const tabInfo = tabs.find(tab => tab.id === tabId);
-    if (tabInfo) {
-      setInputValue(tabInfo.url);
+    const updatedTabs = tabs.filter(tab => tab.id !== tabId);
+    
+    // If closing the active tab, select another tab
+    if (activeTabId === tabId) {
+      const closedTabIndex = tabs.findIndex(tab => tab.id === tabId);
+      const newActiveIndex = closedTabIndex === 0 ? 0 : closedTabIndex - 1;
+      setActiveTabId(updatedTabs[newActiveIndex].id);
     }
+    
+    setTabs(updatedTabs);
   };
 
-  const navigateTo = () => {
-    if (inputValue.trim() && activeTabId) {
-      const activeTab = tabs.find(tab => tab.id === activeTabId);
-      if (activeTab) {
-        goTo(inputValue.trim(), activeTab);
-      }
-    }
+  const handleSelectTab = (tabId) => {
+    setActiveTabId(tabId);
   };
 
-  const goTo = (address, tabInfo) => {
-    const addr = address.trim();
-    const isContract = /^0x[a-fA-F0-9]{40}$/.test(addr);
-
-    // Build URL based on whether it's a contract address or not
-    const url = isContract
-      ? `${GATEWAY_BASE}/${addr}/index.html`
-      : `${GATEWAY_BASE}/${addr}`;
-
-    // Update tab info
-    setTabs(prevTabs => {
-      return prevTabs.map(tab => {
-        if (tab.id === tabInfo.id) {
-          // Update history but prevent duplicates
-          let newHistory = [...tab.history];
-          let newIndex = tab.currentIndex;
-          
-          if (tab.history[tab.currentIndex] !== url) {
-            newHistory = newHistory.slice(0, tab.currentIndex + 1);
-            newHistory.push(url);
-            newIndex = newHistory.length - 1;
-          }
+  // Navigation functions
+  const handleNavigate = (url) => {
+    setIsLoading(true);
+    
+    // Process URL (add https:// if needed)
+    let processedUrl = url;
+    if (!/^https?:\/\//i.test(url)) {
+      processedUrl = 'https://' + url;
+    }
+    
+    // Update the active tab
+    setTabs(prevTabs => 
+      prevTabs.map(tab => {
+        if (tab.id === activeTabId) {
+          // Update history
+          const newHistory = [...tab.history.slice(0, tab.currentHistoryIndex + 1), processedUrl];
           
           return {
             ...tab,
-            url: addr,
-            title: isContract ? `${addr.substring(0, 20)}${addr.length > 20 ? '...' : ''}` : addr.substring(0, 20),
+            url: processedUrl,
+            title: url, // Will be updated when page loads
             history: newHistory,
-            currentIndex: newIndex,
-            hasSearched: true
+            currentHistoryIndex: newHistory.length - 1
           };
         }
         return tab;
-      });
-    });
+      })
+    );
+    
+    // Simulate page loading
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
   };
 
-  const goBack = () => {
-    if (!activeTabId) return;
-
-    const activeTab = tabs.find(tab => tab.id === activeTabId);
-    if (activeTab && activeTab.currentIndex > 0) {
-      setTabs(prevTabs => {
-        return prevTabs.map(tab => {
-          if (tab.id === activeTabId) {
-            return {
-              ...tab,
-              currentIndex: tab.currentIndex - 1
-            };
-          }
-          return tab;
-        });
-      });
-    }
-  };
-
-  const goForward = () => {
-    if (!activeTabId) return;
-
-    const activeTab = tabs.find(tab => tab.id === activeTabId);
-    if (activeTab && activeTab.currentIndex < activeTab.history.length - 1) {
-      setTabs(prevTabs => {
-        return prevTabs.map(tab => {
-          if (tab.id === activeTabId) {
-            return {
-              ...tab,
-              currentIndex: tab.currentIndex + 1
-            };
-          }
-          return tab;
-        });
-      });
-    }
-  };
-
-  const reload = () => {
-    if (!activeTabId) return;
-
-    const activeTab = tabs.find(tab => tab.id === activeTabId);
-    if (activeTab && activeTab.history[activeTab.currentIndex]) {
-      // Force a reload by updating the tab
-      setTabs(prevTabs => {
-        return prevTabs.map(tab => {
-          if (tab.id === activeTabId) {
-            return { ...tab };
-          }
-          return tab;
-        });
-      });
-    }
-  };
-
-  const updateButtons = () => {
+  const handleBack = () => {
     const activeTab = tabs.find(tab => tab.id === activeTabId);
     
-    if (activeTab) {
-      if (backButtonRef.current) {
-        backButtonRef.current.disabled = activeTab.currentIndex <= 0;
-      }
+    if (activeTab && activeTab.currentHistoryIndex > 0) {
+      setIsLoading(true);
       
-      if (forwardButtonRef.current) {
-        forwardButtonRef.current.disabled = activeTab.currentIndex >= activeTab.history.length - 1;
-      }
+      setTabs(prevTabs => 
+        prevTabs.map(tab => {
+          if (tab.id === activeTabId) {
+            const newIndex = tab.currentHistoryIndex - 1;
+            return {
+              ...tab,
+              url: tab.history[newIndex],
+              currentHistoryIndex: newIndex
+            };
+          }
+          return tab;
+        })
+      );
       
-      if (reloadButtonRef.current) {
-        reloadButtonRef.current.disabled = activeTab.currentIndex === -1;
-      }
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
     }
   };
 
+  const handleForward = () => {
+    const activeTab = tabs.find(tab => tab.id === activeTabId);
+    
+    if (activeTab && activeTab.currentHistoryIndex < activeTab.history.length - 1) {
+      setIsLoading(true);
+      
+      setTabs(prevTabs => 
+        prevTabs.map(tab => {
+          if (tab.id === activeTabId) {
+            const newIndex = tab.currentHistoryIndex + 1;
+            return {
+              ...tab,
+              url: tab.history[newIndex],
+              currentHistoryIndex: newIndex
+            };
+          }
+          return tab;
+        })
+      );
+      
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+    }
+  };
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+  };
+
+  const handleHome = () => {
+    setIsLoading(true);
+    
+    setTabs(prevTabs => 
+      prevTabs.map(tab => {
+        if (tab.id === activeTabId) {
+          return {
+            ...tab,
+            url: '',
+            title: 'New Tab'
+          };
+        }
+        return tab;
+      })
+    );
+    
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+  };
+
+  // Sidebar toggle
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  // Theme toggle
   const toggleTheme = () => {
     const htmlElement = document.documentElement;
     const currentTheme = htmlElement.getAttribute('data-theme');
@@ -253,123 +225,51 @@ function App() {
     localStorage.setItem('preferredTheme', newTheme);
   };
 
-  const handleFeaturedItemClick = (contract) => {
-    setInputValue(contract);
-    navigateTo();
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      navigateTo();
-    }
-  };
-
+  // Get the active tab
   const activeTab = tabs.find(tab => tab.id === activeTabId);
+  
+  // Check if navigation buttons should be enabled
+  const canGoBack = activeTab && activeTab.currentHistoryIndex > 0;
+  const canGoForward = activeTab && activeTab.currentHistoryIndex < activeTab.history.length - 1;
 
   return (
-    <>
-      <div className="browser-header">
-        <div className="title-bar">
-          <div className="tab-container" id="tabContainer">
-            {tabs.map(tab => (
-              <Tab
-                key={tab.id}
-                id={tab.id}
-                title={tab.title}
-                isActive={tab.id === activeTabId}
-                onTabClick={() => setActiveTab(tab.id)}
-                onCloseClick={() => closeTab(tab.id)}
-              />
-            ))}
-          </div>
-          <div className="new-tab" id="newTabBtn" onClick={createNewTab}>
-            <i className="fa-solid fa-plus"></i>
-          </div>
-        </div>
-
-        <div className="controls">
-          <div className="nav-buttons">
-            <button 
-              className="nav-button" 
-              id="backButton" 
-              ref={backButtonRef}
-              onClick={goBack}
-              disabled={!activeTab || activeTab.currentIndex <= 0}
-            >
-              <i className="fa-solid fa-chevron-left"></i>
-            </button>
-            <button 
-              className="nav-button" 
-              id="forwardButton" 
-              ref={forwardButtonRef}
-              onClick={goForward}
-              disabled={!activeTab || activeTab.currentIndex >= activeTab.history.length - 1}
-            >
-              <i className="fa-solid fa-chevron-right"></i>
-            </button>
-            <button 
-              className="nav-button" 
-              id="reloadButton" 
-              ref={reloadButtonRef}
-              onClick={reload}
-              disabled={!activeTab || activeTab.currentIndex === -1}
-            >
-              <i className="fa-solid fa-arrow-rotate-right"></i>
-            </button>
-          </div>
-
-          <input 
-            className="contract-input" 
-            id="contractInput" 
-            placeholder="Enter WTTP contract address (0x...)" 
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
+    <div className={`${styles.browserContainer} ${isSidebarOpen ? styles.sidebarOpen : ''}`}>
+      <Header toggleSidebar={toggleSidebar} />
+      
+      <div className={styles.mainContent}>
+        <Sidebar isOpen={isSidebarOpen} />
+        
+        <div className={styles.contentArea}>
+          <TabBar 
+            tabs={tabs} 
+            activeTabId={activeTabId} 
+            onSelectTab={handleSelectTab} 
+            onCloseTab={handleCloseTab} 
+            onAddTab={handleAddTab} 
           />
-
-          <button className="nav-button" id="goButton" onClick={navigateTo}>
-            <i className="fa-solid fa-arrow-right"></i>
-          </button>
-
-          <div className="browser-actions">
-            <a href="https://x.com/TechnicallyWeb3" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-              <button className="action-button">
-                <i className="fa-brands fa-twitter"></i>
-              </button>
-            </a>
-            <a href="https://discord.gg/2BuEhqfeeB" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-              <button className="action-button">
-                <i className="fa-brands fa-discord"></i>
-              </button>
-            </a>
-            <button className="action-button">
-              <i className="fa-regular fa-file-word"></i>
-            </button>
+          
+          <div className={styles.navigationBar}>
+            <NavigationControls 
+              onBack={handleBack} 
+              onForward={handleForward} 
+              onRefresh={handleRefresh} 
+              onHome={handleHome} 
+              canGoBack={canGoBack} 
+              canGoForward={canGoForward} 
+            />
+            <AddressBar 
+              currentUrl={activeTab ? activeTab.url : ''} 
+              onNavigate={handleNavigate} 
+            />
           </div>
-
-          {/* Theme Toggle Button */}
-          <div className="theme-toggle" id="themeToggle" onClick={toggleTheme}>
-            <div className="theme-toggle-icon">
-              <span><i className="fa-solid fa-sun"></i></span>
-              <span><i className="fa-solid fa-moon"></i></span>
-            </div>
-            <div className="theme-toggle-slider"></div>
-          </div>
+          
+          <BrowserContent 
+            activeTab={activeTab} 
+            isLoading={isLoading} 
+          />
         </div>
       </div>
-
-      <div className="browser-content" id="browserContent">
-        {tabs.map(tab => (
-          <TabContent
-            key={tab.id}
-            tab={tab}
-            isActive={tab.id === activeTabId}
-            onFeaturedItemClick={handleFeaturedItemClick}
-          />
-        ))}
-      </div>
-    </>
+    </div>
   );
 }
 
